@@ -637,6 +637,55 @@ h1, h2, h3 { font-weight: 700; color: var(--text-primary); }
     font-size: 0.9rem;
 }
 
+/* ============ FLOATING CONTACT ============ */
+.floating-contact-wrapper {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.floating-contact-text {
+    background: #e11d48; /* Nổi bật với màu đỏ viền hồng */
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(225, 29, 72, 0.4);
+    animation: bounce 2s infinite;
+    pointer-events: none; /* Không cản trở click */
+}
+/* Hiệu ứng nảy nhẹ thu hút sự chú ý */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+.floating-contact {
+    width: 60px;
+    height: 60px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+.floating-contact img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transform: scale(1.1); /* Zoom in button logo slightly to fit circle nicely */
+}
+.floating-contact:hover {
+    transform: scale(1.1) translateY(-5px);
+}
+
 /* ============ MOBILE RESPONSIVE ============ */
 @media (max-width: 768px) {
     /* Split layout becomes stacked */
@@ -736,4 +785,18 @@ h1, h2, h3 { font-weight: 700; color: var(--text-primary); }
     .modal-body { padding: 1.5rem; }
     #modal-title { font-size: 1.35rem; }
     .btn-zalo-large { font-size: 0.95rem; padding: 12px; font-weight: 600; }
+
+    /* Floating Contact Responsive */
+    .floating-contact-wrapper {
+        bottom: 20px;
+        right: 20px;
+    }
+    .floating-contact {
+        width: 50px;
+        height: 50px;
+    }
+    .floating-contact-text {
+        font-size: 0.75rem;
+        padding: 3px 10px;
+    }
 }
