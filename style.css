@@ -787,11 +787,6 @@ h1, h2, h3 { font-weight: 700; color: var(--text-primary); }
     color: var(--text-primary);
     margin-bottom: 15px;
 }
-.advisory-countdown {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: 15px;
-}
 .btn-advisory {
     display: inline-flex;
     align-items: center;

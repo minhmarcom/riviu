@@ -355,7 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============ AUTO ADVISORY POPUP ============
     const advisoryPopup = document.getElementById('advisory-popup');
     const advisoryClose = document.getElementById('advisory-close');
-    const advisoryTimerSpan = document.getElementById('advisory-timer');
     const advisoryZaloBtn = document.getElementById('advisory-zalo-btn');
     
     if(advisoryZaloBtn) {
@@ -365,8 +364,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!sessionStorage.getItem('advisoryDismissed') && advisoryPopup) {
         let hasScrolled = false;
-        let countdownInterval;
-        let timeLeft = 8;
         
         const scrollListener = function() {
             hasScrolled = true;
@@ -388,24 +385,11 @@ document.addEventListener('DOMContentLoaded', () => {
         function triggerPopupIn(delay) {
             setTimeout(() => {
                 advisoryPopup.classList.add('show');
-                startCountdown();
             }, delay);
-        }
-
-        function startCountdown() {
-            advisoryTimerSpan.textContent = timeLeft;
-            countdownInterval = setInterval(() => {
-                timeLeft--;
-                advisoryTimerSpan.textContent = timeLeft;
-                if (timeLeft <= 0) {
-                    closePopup();
-                }
-            }, 1000);
         }
 
         function closePopup() {
             advisoryPopup.classList.remove('show');
-            clearInterval(countdownInterval);
             sessionStorage.setItem('advisoryDismissed', 'true');
         }
 
