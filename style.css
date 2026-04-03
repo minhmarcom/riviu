@@ -720,6 +720,99 @@ h1, h2, h3 { font-weight: 700; color: var(--text-primary); }
     transform: scale(1.1) translateY(-5px);
 }
 
+/* ============ AUTO ADVISORY POPUP ============ */
+.advisory-popup {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: calc(100% - 40px);
+    max-width: 350px;
+    z-index: 2000;
+    transform: translateY(150%);
+    opacity: 0;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
+    pointer-events: none;
+}
+.advisory-popup.show {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+.advisory-content {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.6);
+}
+.advisory-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255,255,255,0.25);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.2s;
+}
+.advisory-close:hover {
+    background: rgba(255,255,255,0.5);
+}
+.advisory-header {
+    background: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%);
+    color: white;
+    padding: 15px 20px;
+    text-align: center;
+}
+.advisory-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+.advisory-body {
+    padding: 20px;
+    text-align: center;
+}
+.advisory-body p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+}
+.advisory-countdown {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+}
+.btn-advisory {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #0068ff 0%, #0056d6 100%);
+    color: white;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 1rem;
+    box-shadow: 0 4px 15px rgba(0, 104, 255, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-advisory:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 104, 255, 0.5);
+    color: white;
+}
+
 /* ============ MOBILE RESPONSIVE ============ */
 @media (max-width: 768px) {
     /* Split layout becomes stacked */

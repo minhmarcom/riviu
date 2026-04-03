@@ -351,6 +351,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
     mClose.addEventListener('click', closeBox);
     backdrop.addEventListener('click', closeBox);
+
+    // ============ AUTO ADVISORY POPUP ============
+    const advisoryPopup = document.getElementById('advisory-popup');
+    const advisoryClose = document.getElementById('advisory-close');
+    const advisoryTimerSpan = document.getElementById('advisory-timer');
+    const advisoryZaloBtn = document.getElementById('advisory-zalo-btn');
+    
+    if(advisoryZaloBtn) {
+        const advMsg = `Chào RIVIU, tư vấn giúp mình vé đi Bà Đen / Vũng Tàu / Hòn Thơm nhé`;
+        advisoryZaloBtn.href = `https://zalo.me/${ZALO_NUMBER}/?text=${encodeURIComponent(advMsg)}`;
+    }
+
+    if (!sessionStorage.getItem('advisoryDismissed') && advisoryPopup) {
+        let hasScrolled = false;
+        let countdownInterval;
+        let timeLeft = 8;
+        
+        const scrollListener = function() {
+            hasScrolled = true;
+            window.removeEventListener('scroll', scrollListener);
+        };
+        window.addEventListener('scroll', scrollListener);
+
+        setTimeout(() => {
+            if (hasScrolled) {
+                triggerPopupIn(5000);
+            } else {
+                window.addEventListener('scroll', function scrollThenShow() {
+                    window.removeEventListener('scroll', scrollThenShow);
+                    triggerPopupIn(5000);
+                });
+            }
+        }, 3000);
+
+        function triggerPopupIn(delay) {
+            setTimeout(() => {
+                advisoryPopup.classList.add('show');
+                startCountdown();
+            }, delay);
+        }
+
+        function startCountdown() {
+            advisoryTimerSpan.textContent = timeLeft;
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                advisoryTimerSpan.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    closePopup();
+                }
+            }, 1000);
+        }
+
+        function closePopup() {
+            advisoryPopup.classList.remove('show');
+            clearInterval(countdownInterval);
+            sessionStorage.setItem('advisoryDismissed', 'true');
+        }
+
+        if(advisoryClose) advisoryClose.addEventListener('click', closePopup);
+        if(advisoryZaloBtn) advisoryZaloBtn.addEventListener('click', closePopup);
+    }
 });
 
 window.openZaloGlobal = function() {
