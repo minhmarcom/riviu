@@ -268,6 +268,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Slider Hero Image
+    const heroSlides = document.querySelectorAll('.hero-slide');
+    if (heroSlides.length > 0) {
+        let currentSlide = 0;
+        setInterval(() => {
+            heroSlides[currentSlide].classList.remove('active-slide');
+            currentSlide = (currentSlide + 1) % heroSlides.length;
+            heroSlides[currentSlide].classList.add('active-slide');
+        }, 5000);
+    }
+
     // Gắn Filter Reset function ra global
     window.resetFilters = function() {
         // Reset state
