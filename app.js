@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
             heroSlides[currentSlide].classList.remove('active-slide');
             currentSlide = (currentSlide + 1) % heroSlides.length;
             heroSlides[currentSlide].classList.add('active-slide');
-        }, 5000);
+        }, 8000);
     }
 
     // Gắn Filter Reset function ra global
