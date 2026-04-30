@@ -58,346 +58,375 @@ const destinations = [
    UI LOGIC HANDLER
 ========================================= */
 
-// Filter state
-let currentRegion = 'all';
-let currentBrand = 'all';
-let searchKeyword = ''; // Đảm bảo biến này được khai báo toàn cục
+const regionMeta = {
+    mienbac: {
+        label: "Miền Bắc",
+        className: "mienbac",
+        gradient: "linear-gradient(135deg, #0b4ea2, #0f9f9a)"
+    },
+    mientrung: {
+        label: "Miền Trung",
+        className: "mientrung",
+        gradient: "linear-gradient(135deg, #d89b18, #e15b4f)"
+    },
+    miennam: {
+        label: "Miền Nam",
+        className: "miennam",
+        gradient: "linear-gradient(135deg, #238a57, #0f9f9a)"
+    }
+};
 
-document.addEventListener('DOMContentLoaded', () => {
-    
-    const gridContainer = document.getElementById('destinations-grid');
-    const noResults = document.getElementById('no-results');
-    const resCount = document.getElementById('results-count');
-    const filterBtns = document.querySelectorAll('.filter-btn');
+const brandMeta = {
+    sunworld: { label: "Sun World", icon: "fa-solid fa-sun", className: "sunworld" },
+    vinwonders: { label: "VinWonders", icon: "fa-solid fa-crown", className: "vinwonders" },
+    ttc: { label: "TTC World", icon: "fa-solid fa-tree", className: "ttc" },
+    other: { label: "Khác", icon: "fa-solid fa-location-dot", className: "other" }
+};
 
-    // Mặc định Render All
-    renderCards(destinations);
+let currentRegion = "all";
+let currentBrand = "all";
+let searchKeyword = "";
 
-    // Xử lý sự kiện click filter
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    }[char]));
+}
+
+function normalizeText(value) {
+    return String(value)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "D")
+        .toLowerCase()
+        .trim();
+}
+
+function getZaloLink(item) {
+    const msg = item
+        ? `Xin chào RIVIU.ASIA, mình quan tâm vé "${item.title}" tại ${item.loc}. Vui lòng báo giá ưu đãi.`
+        : "Xin chào RIVIU.ASIA, mình cần tư vấn voucher du lịch.";
+
+    return `https://zalo.me/${ZALO_NUMBER}?text=${encodeURIComponent(msg)}`;
+}
+
+function getSearchText(item) {
+    return normalizeText(`${item.title} ${item.loc} ${item.desc}`);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const gridContainer = document.getElementById("destinations-grid");
+    const noResults = document.getElementById("no-results");
+    const resultsLabel = document.getElementById("results-label");
+    const resCount = document.getElementById("results-count");
+    const filterBtns = document.querySelectorAll(".filter-btn");
+    const searchInput = document.getElementById("main-search");
+    const searchSuggestions = document.getElementById("search-suggestions");
+    const pinsContainer = document.getElementById("pins-container");
+
+    const modal = document.getElementById("booking-modal");
+    const backdrop = document.getElementById("backdrop");
+    const mClose = document.getElementById("close-modal");
+    const mTitle = document.getElementById("modal-title");
+    const mBox = document.getElementById("modal-banner");
+    const mRegion = document.getElementById("modal-region");
+    const mLoc = document.getElementById("modal-location");
+    const mDesc = document.getElementById("modal-desc");
+    const btnZalo = document.getElementById("zalo-link");
+
     filterBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener("click", () => {
             const filterVal = btn.dataset.filter;
             const filterType = btn.dataset.type;
 
-            // Xóa active class của nhóm đó
-            document.querySelectorAll(`.filter-btn[data-type="${filterType}"]`).forEach(b => b.classList.remove('active'));
-            
-            // Cập nhật giá trị filter tương ứng
-            if(filterType === 'brand') {
+            document.querySelectorAll(`.filter-btn[data-type="${filterType}"]`).forEach(item => {
+                item.classList.remove("active");
+            });
+
+            if (filterType === "brand") {
                 currentBrand = filterVal;
             } else {
                 currentRegion = filterVal;
             }
 
-            btn.classList.add('active');
-            
-            // Thực hiện lọc ngay lập tức
+            btn.classList.add("active");
             filterData();
         });
     });
 
-    // Hover Sync (Đồng bộ Card hover - Map Pin highlight)
+    searchInput.addEventListener("input", event => {
+        searchKeyword = normalizeText(event.target.value);
+
+        if (searchKeyword.length > 0) {
+            const matches = destinations.filter(item => getSearchText(item).includes(searchKeyword));
+            renderSuggestions(matches);
+        } else {
+            searchSuggestions.classList.remove("active");
+        }
+
+        filterData();
+    });
+
+    searchInput.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            searchSuggestions.classList.remove("active");
+            searchInput.blur();
+        }
+    });
+
+    document.addEventListener("click", event => {
+        if (!event.target.closest(".search-container")) {
+            searchSuggestions.classList.remove("active");
+        }
+    });
+
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            closeBox();
+            closePopup(true);
+        }
+    });
+
     window.highlightPin = function(id) {
         const pin = document.querySelector(`.map-pin[data-id="${id}"]`);
-        if (pin) pin.classList.add('pin-hover-active');
+        if (pin) pin.classList.add("pin-hover-active");
     };
 
     window.unhighlightPin = function(id) {
         const pin = document.querySelector(`.map-pin[data-id="${id}"]`);
-        if (pin) pin.classList.remove('pin-hover-active');
+        if (pin) pin.classList.remove("pin-hover-active");
     };
-
-    // Lắng nghe sự kiện tìm kiếm
-    const searchInput = document.getElementById('main-search');
-    const searchSuggestions = document.getElementById('search-suggestions');
-    searchInput.addEventListener('input', function(e) {
-        const val = e.target.value.toLowerCase().trim();
-        searchKeyword = val;
-        
-        if (val.length > 0) {
-            const matches = destinations.filter(d => 
-                d.title.toLowerCase().includes(val) || 
-                d.loc.toLowerCase().includes(val)
-            );
-            renderSuggestions(matches);
-        } else {
-            searchSuggestions.classList.remove('active');
-        }
-        filterData();
-    });
-
-    // Render danh sách gợi ý
-    function renderSuggestions(matches) {
-        if (matches.length === 0) {
-            searchSuggestions.innerHTML = `<li class="suggestion-item"><span class="suggestion-title">Không tìm thấy địa điểm</span></li>`;
-            searchSuggestions.classList.add('active');
-            return;
-        }
-
-        const html = matches.slice(0, 6).map(m => `
-            <li class="suggestion-item" onclick="selectSuggestion(${m.id})">
-                <i class="fa-solid fa-location-dot" style="color:var(--text-secondary)"></i>
-                <div>
-                    <div class="suggestion-title">${m.title}</div>
-                    <div class="suggestion-loc">${m.loc}</div>
-                </div>
-            </li>
-        `).join('');
-        
-        searchSuggestions.innerHTML = html;
-        searchSuggestions.classList.add('active');
-    }
 
     window.selectSuggestion = function(id) {
         searchInput.value = "";
         searchKeyword = "";
-        searchSuggestions.classList.remove('active');
+        searchSuggestions.classList.remove("active");
         filterData();
         openBookingModal(id);
     };
 
-    // Đóng gợi ý khi click ra ngoài
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.search-container')) {
-            searchSuggestions.classList.remove('active');
+    window.resetFilters = function() {
+        currentRegion = "all";
+        currentBrand = "all";
+        searchKeyword = "";
+        searchInput.value = "";
+        searchSuggestions.classList.remove("active");
+
+        filterBtns.forEach(btn => btn.classList.remove("active"));
+        document.querySelector('.filter-btn[data-type="region"][data-filter="all"]')?.classList.add("active");
+        document.querySelector('.filter-btn[data-type="brand"][data-filter="all"]')?.classList.add("active");
+
+        renderCards(destinations);
+    };
+
+    window.openBookingModal = function(id) {
+        const item = destinations.find(destination => destination.id === id);
+        if (!item) return;
+
+        const region = regionMeta[item.region];
+        const brand = brandMeta[item.brand] || brandMeta.other;
+
+        mTitle.textContent = item.title;
+        mRegion.textContent = region.label;
+        mLoc.innerHTML = `<i class="fa-solid fa-location-dot" aria-hidden="true"></i> ${escapeHtml(item.loc)}`;
+        mDesc.innerHTML = `${escapeHtml(item.desc)}<br><br><strong>RIVIU.ASIA</strong> phản hồi giá vé, tình trạng mở bán và phương án phù hợp cho khách lẻ hoặc đoàn qua Zalo.`;
+        btnZalo.href = getZaloLink(item);
+
+        mBox.style.background = region.gradient;
+        mBox.innerHTML = `
+            <div class="modal-banner-inner">
+                <div class="modal-banner-icon"><i class="${brand.icon}" aria-hidden="true"></i></div>
+                <div class="modal-banner-copy">
+                    <span>${escapeHtml(brand.label)}</span>
+                    <strong>${escapeHtml(region.label)}</strong>
+                </div>
+            </div>
+        `;
+
+        modal.classList.add("open");
+        backdrop.classList.add("show");
+        document.body.classList.add("modal-open");
+    };
+
+    function closeBox() {
+        modal.classList.remove("open");
+        backdrop.classList.remove("show");
+        document.body.classList.remove("modal-open");
+    }
+
+    mClose.addEventListener("click", closeBox);
+    backdrop.addEventListener("click", closeBox);
+
+    function renderSuggestions(matches) {
+        if (matches.length === 0) {
+            searchSuggestions.innerHTML = `
+                <li class="suggestion-item" aria-disabled="true">
+                    <i class="fa-regular fa-compass" aria-hidden="true"></i>
+                    <div>
+                        <div class="suggestion-title">Không tìm thấy điểm đến</div>
+                        <div class="suggestion-loc">Thử tên tỉnh thành hoặc thương hiệu khác</div>
+                    </div>
+                </li>
+            `;
+            searchSuggestions.classList.add("active");
+            return;
         }
-    });
+
+        searchSuggestions.innerHTML = matches.slice(0, 6).map(item => `
+            <li class="suggestion-item" onclick="selectSuggestion(${item.id})">
+                <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                <div>
+                    <div class="suggestion-title">${escapeHtml(item.title)}</div>
+                    <div class="suggestion-loc">${escapeHtml(item.loc)}</div>
+                </div>
+            </li>
+        `).join("");
+        searchSuggestions.classList.add("active");
+    }
 
     function filterData() {
         const filtered = destinations.filter(item => {
-            // Kiểm tra Filter
-            let matchRegion = true;
-            if (currentRegion !== 'all') {
-                matchRegion = item.region === currentRegion;
-            }
-
-            let matchBrand = true;
-            if (currentBrand !== 'all') {
-                matchBrand = item.brand === currentBrand;
-            }
-
-            // Kiểm tra Search
-            let matchSearch = true;
-            if (searchKeyword.length > 0) {
-                matchSearch = item.title.toLowerCase().includes(searchKeyword) || item.loc.toLowerCase().includes(searchKeyword);
-            }
+            const matchRegion = currentRegion === "all" || item.region === currentRegion;
+            const matchBrand = currentBrand === "all" || item.brand === currentBrand;
+            const matchSearch = searchKeyword.length === 0 || getSearchText(item).includes(searchKeyword);
 
             return matchRegion && matchBrand && matchSearch;
         });
-
-        // Cập nhật số lượng
-        document.getElementById('results-count').textContent = filtered.length;
 
         renderCards(filtered);
     }
 
     function renderCards(data) {
-        // Cập nhật số lượng
+        if (resultsLabel) resultsLabel.textContent = getResultsLabel();
         resCount.textContent = data.length;
+        if (noResults) noResults.hidden = data.length !== 0;
 
         if (data.length === 0) {
-            gridContainer.innerHTML = '';
+            gridContainer.innerHTML = "";
+            renderPins([]);
             return;
         }
 
-        // Render Danh sách Thẻ bài
-        const htmlParams = data.map((item, index) => {
-            let bName = "Khám Phá";
-            let bEmoji = "✨";
-            if(item.brand === 'sunworld') { bName = "Sun World"; bEmoji = "☀️"; }
-            if(item.brand === 'vinwonders') { bName = "VinWonders"; bEmoji = "🏰"; }
-            if(item.brand === 'ttc') { bName = "TTC World"; bEmoji = "🌲"; }
-            let cardClass = `card-theme-${item.region}`;
-            let rName = item.region === "mienbac" ? "Miền Bắc" : (item.region === "mientrung" ? "Miền Trung" : "Miền Nam");
-
-            // Giảm độ trễ cực nhỏ hoặc bằng 0 để tránh cảm giác "trễ" khi filter
-            let delay = (index * 0.015);
-            if (delay > 0.5) delay = 0.5;
+        gridContainer.innerHTML = data.map((item, index) => {
+            const region = regionMeta[item.region];
+            const brand = brandMeta[item.brand] || brandMeta.other;
+            const delay = Math.min(index * 0.015, 0.35).toFixed(3);
+            const cardNumber = String(item.id).padStart(2, "0");
 
             return `
-                <article class="dest-card card-anim ${cardClass}" 
-                         style="animation-delay: ${delay}s" 
-                         onclick="toggleCard(this, event)" 
-                         onmouseenter="highlightPin(${item.id})" 
+                <article class="dest-card card-anim card-theme-${item.region}"
+                         style="animation-delay: ${delay}s"
+                         onmouseenter="highlightPin(${item.id})"
                          onmouseleave="unhighlightPin(${item.id})">
                     <div class="card-content">
                         <div class="card-header-flex">
                             <div class="card-tags">
-                                <span class="tag-region">${rName}</span>
-                                <span class="tag-brand">${bEmoji} ${bName}</span>
+                                <span class="tag-region ${region.className}">${region.label}</span>
+                                <span class="tag-brand ${brand.className}">
+                                    <i class="${brand.icon}" aria-hidden="true"></i>
+                                    ${brand.label}
+                                </span>
                             </div>
-                            <div class="expand-icon"><i class="fa-solid fa-chevron-down"></i></div>
+                            <span class="card-index">${cardNumber}</span>
                         </div>
-                        
-                        <h3 class="card-title">${item.title}</h3>
-                        <div class="card-loc"><i class="fa-solid fa-location-dot"></i> ${item.loc}</div>
-                        
-                        <div class="card-expand-content">
-                            <p class="card-desc">${item.desc}</p>
-                            <div class="card-cta" onclick="event.stopPropagation(); openBookingModal(${item.id})">
-                                <span class="cta-text">🔥 Mua vé ngay</span>
-                                <span class="cta-icon"><i class="fa-brands fa-zalo"></i></span>
-                            </div>
+
+                        <h3 class="card-title">${escapeHtml(item.title)}</h3>
+                        <div class="card-loc">
+                            <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                            <span>${escapeHtml(item.loc)}</span>
+                        </div>
+                        <p class="card-desc">${escapeHtml(item.desc)}</p>
+
+                        <div class="card-actions">
+                            <button class="card-action secondary" type="button" onclick="openBookingModal(${item.id})">
+                                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                                <span>Chi tiết</span>
+                            </button>
+                            <a class="card-action primary" href="${getZaloLink(item)}" target="_blank" rel="noopener">
+                                <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>
+                                <span>Báo giá Zalo</span>
+                            </a>
                         </div>
                     </div>
                 </article>
             `;
-        }).join('');
+        }).join("");
 
-        gridContainer.innerHTML = htmlParams;
-
-        // Render Các điểm Ghim (Pins) trên Bản đồ SVG
-        const pinsContainer = document.getElementById('pins-container');
-        if (pinsContainer) {
-            const htmlPins = data.map(item => {
-                let pEmoji = "✨";
-                if(item.brand === 'sunworld') pEmoji = "☀️";
-                if(item.brand === 'vinwonders') pEmoji = "🏰";
-                if(item.brand === 'ttc') pEmoji = "🌲";
-                
-                let pulseClass = `pulse-${item.region}`;
-
-                return `
-                    <div class="map-pin ${pulseClass}" data-id="${item.id}" style="left: ${item.mapX}%; top: ${item.mapY}%;" onclick="openBookingModal(${item.id})" title="${item.title}">
-                        <span class="pin-emoji">${pEmoji}</span>
-                        <div class="pin-pulse"></div>
-                    </div>
-                `;
-            }).join('');
-            pinsContainer.innerHTML = htmlPins;
-        }
+        renderPins(data);
     }
 
-    // Slider Hero Image
-    const heroSlides = document.querySelectorAll('.hero-slide');
-    if (heroSlides.length > 0) {
-        let currentSlide = 0;
-        setInterval(() => {
-            heroSlides[currentSlide].classList.remove('active-slide');
-            currentSlide = (currentSlide + 1) % heroSlides.length;
-            heroSlides[currentSlide].classList.add('active-slide');
-        }, 8000);
+    function getResultsLabel() {
+        if (searchKeyword.length > 0) return "Kết quả tìm kiếm";
+
+        const labels = [];
+        if (currentRegion !== "all") labels.push(regionMeta[currentRegion].label);
+        if (currentBrand !== "all") labels.push((brandMeta[currentBrand] || brandMeta.other).label);
+
+        return labels.length > 0 ? labels.join(" - ") : "Tất cả điểm đến";
     }
 
-    // Gắn Filter Reset function ra global
-    window.resetFilters = function() {
-        // Reset state
-        currentRegion = 'all';
-        currentBrand = 'all';
-        searchKeyword = '';
-        searchInput.value = '';
-        
-        // Reset CSS
-        filterBtns.forEach(btn => btn.classList.remove('active'));
-        document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
+    function renderPins(data) {
+        if (!pinsContainer) return;
 
-        // Render
-        renderCards(destinations);
-    };
+        pinsContainer.innerHTML = data.map(item => {
+            const brand = brandMeta[item.brand] || brandMeta.other;
 
-    /* =========================================
-       MODAL ZALO LOGIC
-    ========================================= */
-    const modal = document.getElementById('booking-modal');
-    const backdrop = document.getElementById('backdrop');
-    const mClose = document.getElementById('close-modal');
+            return `
+                <button class="map-pin pulse-${item.region}"
+                        type="button"
+                        data-id="${item.id}"
+                        style="left: ${item.mapX}%; top: ${item.mapY}%;"
+                        onclick="openBookingModal(${item.id})"
+                        aria-label="${escapeHtml(item.title)}">
+                    <i class="${brand.icon}" aria-hidden="true"></i>
+                    <span class="pin-pulse"></span>
+                </button>
+            `;
+        }).join("");
+    }
 
-    const mTitle = document.getElementById('modal-title');
-    const mBox = document.getElementById('modal-banner');
-    const mRegion = document.getElementById('modal-region');
-    const mLoc = document.getElementById('modal-location');
-    const mDesc = document.getElementById('modal-desc');
-    const btnZalo = document.getElementById('zalo-link');
+    const advisoryPopup = document.getElementById("advisory-popup");
+    const advisoryClose = document.getElementById("advisory-close");
+    const advisoryZaloBtn = document.getElementById("advisory-zalo-btn");
 
-    window.toggleCard = function(el, event) {
-        // Đóng các thẻ đang mở khác (tùy chọn - nếu muốn chế độ accordion)
-        /*
-        document.querySelectorAll('.dest-card.expanded').forEach(card => {
-            if(card !== el) card.classList.remove('expanded');
-        });
-        */
-        el.classList.toggle('expanded');
-    };
+    if (advisoryZaloBtn) {
+        advisoryZaloBtn.href = getZaloLink();
+    }
 
-    window.openBookingModal = function(id) {
-        const item = destinations.find(d => d.id === id);
-        if(!item) return;
+    function closePopup(remember = false) {
+        if (!advisoryPopup) return;
+        advisoryPopup.classList.remove("show");
+        if (remember) sessionStorage.setItem("advisoryDismissed", "true");
+    }
 
-        mTitle.textContent = item.title;
-        // Bỏ Background Modal Banner, thay bằng màu theo vùng:
-        const colorMap = {
-            'mienbac': '#e0e7ff',   // Soft Indigo
-            'mientrung': '#fef08a', // Soft Yellow
-            'miennam': '#bbf7d0'    // Soft Green
+    if (advisoryPopup && !sessionStorage.getItem("advisoryDismissed")) {
+        let hasShown = false;
+        const showPopup = () => {
+            if (hasShown) return;
+            hasShown = true;
+            advisoryPopup.classList.add("show");
         };
-        mBox.style.background = colorMap[item.region] || '#f1f5f9';
-        
-        mRegion.textContent = item.region === "mienbac" ? "📍 Miền Bắc" : (item.region === "mientrung" ? "📍 Miền Trung" : "📍 Miền Nam");
-        mLoc.innerHTML = `<i class="fa-solid fa-location-dot"></i> ${item.loc}`;
-        mDesc.innerHTML = `<strong>🌟 Tuyến điểm:</strong> ${item.desc} <br><br>👉 Nhấn nút bên dưới để chuyển qua Zalo và nhận Mã ưu đãi Booking nhanh chóng!`;
 
-        // Zalo Message
-        const msg = `Xin chào RIVIU.ASIA, mình quan tâm và muốn mua vé cho "[${item.title}]" tại ${item.loc}. Vui lòng báo giá ưu đãi.`;
-        btnZalo.href = `https://zalo.me/${ZALO_NUMBER}/?text=${encodeURIComponent(msg)}`;
-
-        modal.classList.add('open');
-        backdrop.classList.add('show');
-    };
-
-    function closeBox() {
-        modal.classList.remove('open');
-        backdrop.classList.remove('show');
-    }
-
-    mClose.addEventListener('click', closeBox);
-    backdrop.addEventListener('click', closeBox);
-
-    // ============ AUTO ADVISORY POPUP ============
-    const advisoryPopup = document.getElementById('advisory-popup');
-    const advisoryClose = document.getElementById('advisory-close');
-    const advisoryZaloBtn = document.getElementById('advisory-zalo-btn');
-    
-    if(advisoryZaloBtn) {
-        const advMsg = `Chào RIVIU, tư vấn giúp mình vé đi Bà Đen / Vũng Tàu / Hòn Thơm nhé`;
-        advisoryZaloBtn.href = `https://zalo.me/${ZALO_NUMBER}/?text=${encodeURIComponent(advMsg)}`;
-    }
-
-    if (!sessionStorage.getItem('advisoryDismissed') && advisoryPopup) {
-        let hasScrolled = false;
-        
-        const scrollListener = function() {
-            hasScrolled = true;
-            window.removeEventListener('scroll', scrollListener);
+        const showAfterMeaningfulScroll = () => {
+            if (window.scrollY < 420) return;
+            window.removeEventListener("scroll", showAfterMeaningfulScroll);
+            window.setTimeout(showPopup, 1800);
         };
-        window.addEventListener('scroll', scrollListener);
 
-        setTimeout(() => {
-            if (hasScrolled) {
-                triggerPopupIn(5000);
-            } else {
-                window.addEventListener('scroll', function scrollThenShow() {
-                    window.removeEventListener('scroll', scrollThenShow);
-                    triggerPopupIn(5000);
-                });
-            }
-        }, 3000);
-
-        function triggerPopupIn(delay) {
-            setTimeout(() => {
-                advisoryPopup.classList.add('show');
-            }, delay);
-        }
-
-        function closePopup() {
-            advisoryPopup.classList.remove('show');
-            sessionStorage.setItem('advisoryDismissed', 'true');
-        }
-
-        if(advisoryClose) advisoryClose.addEventListener('click', closePopup);
-        if(advisoryZaloBtn) advisoryZaloBtn.addEventListener('click', closePopup);
+        window.addEventListener("scroll", showAfterMeaningfulScroll, { passive: true });
     }
+
+    if (advisoryClose) advisoryClose.addEventListener("click", () => closePopup(true));
+    if (advisoryZaloBtn) advisoryZaloBtn.addEventListener("click", () => closePopup(true));
+
+    renderCards(destinations);
 });
 
 window.openZaloGlobal = function() {
-    window.open(`https://zalo.me/${ZALO_NUMBER}`, '_blank');
+    window.open(getZaloLink(), "_blank", "noopener");
 };
