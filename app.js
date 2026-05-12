@@ -424,7 +424,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (advisoryClose) advisoryClose.addEventListener("click", () => closePopup(true));
     if (advisoryZaloBtn) advisoryZaloBtn.addEventListener("click", () => closePopup(true));
 
-    renderCards(destinations);
+    const initialQuery = new URLSearchParams(window.location.search).get("q");
+    if (initialQuery) {
+        searchKeyword = normalizeText(initialQuery);
+        searchInput.value = initialQuery;
+        filterData();
+    } else {
+        renderCards(destinations);
+    }
 });
 
 window.openZaloGlobal = function() {
