@@ -1,6 +1,6 @@
 const ZALO_NUMBER = "0584556556";
 
-// Dữ liệu 35+ KDL toàn quốc (Phân loại theo Region và Brand)
+// Dữ liệu 45+ dịch vụ toàn quốc (Phân loại theo Region và Brand)
 // Đã bổ sung mapX, mapY = Toạ độ % tuyệt đối trên bản đồ Việt Nam SVG (#0f172a)
 const destinations = [
     // === MIỀN BẮC (mienbac) ===
@@ -51,7 +51,15 @@ const destinations = [
     { id: 38, title: "Sun World Ba Den", loc: "Tây Ninh", region: "miennam", brand: "sunworld", desc: "Chinh phục nóc nhà Đông Nam Bộ linh thiêng, ngắm tượng bồ tát Tây Bổ Đà Sơn sừng sững trên mây.", mapX: 52, mapY: 78 },
     { id: 39, title: "Sun World Vũng Tàu", loc: "Bà Rịa - Vũng Tàu", region: "miennam", brand: "sunworld", desc: "Vui chơi ngắm trọn thành phố Vũng Tàu từ hồ thiên đường trên núi lớn sảng khoái.", mapX: 63, mapY: 86 },
     { id: 40, title: "Công viên Vịnh Diệu Kỳ", loc: "Đồng Nai", region: "miennam", brand: "other", desc: "Amazing Bay - siêu công viên nước có ngọn sóng nhân tạo vắt ngang và bãi biển lớn nhất Việt Nam.", mapX: 60, mapY: 80 },
-    { id: 41, title: "TTC Mekong Aqua Park", loc: "Bến Tre", region: "miennam", brand: "ttc", desc: "Thủ phủ vui chơi sông nước miệt vườn mới của miền Tây nam bộ vơi vô số trò mới lạ.", mapX: 48, mapY: 88 }
+    { id: 41, title: "TTC Mekong Aqua Park", loc: "Bến Tre", region: "miennam", brand: "ttc", desc: "Thủ phủ vui chơi sông nước miệt vườn mới của miền Tây nam bộ vơi vô số trò mới lạ.", mapX: 48, mapY: 88 },
+
+    // === BOOKING KHÁCH SẠN VINPEARL TOÀN QUỐC ===
+    { id: 42, title: "Vinpearl Hotels Hà Nội", loc: "Hà Nội", region: "mienbac", brand: "vinpearl", desc: "Booking phòng khách sạn Vinpearl tại Hà Nội, phù hợp công tác, nghỉ dưỡng gia đình và lịch trình kết hợp vui chơi.", mapX: 48, mapY: 18 },
+    { id: 43, title: "Vinpearl Resort & Spa Hạ Long", loc: "Hạ Long, Quảng Ninh", region: "mienbac", brand: "vinpearl", desc: "Tư vấn phòng nghỉ dưỡng vịnh Hạ Long, hỗ trợ kiểm tra hạng phòng, ngày lưu trú và gói phù hợp theo nhu cầu.", mapX: 59, mapY: 18 },
+    { id: 44, title: "Vinpearl Resort Nha Trang", loc: "Nha Trang, Khánh Hòa", region: "mientrung", brand: "vinpearl", desc: "Booking hệ thống resort Vinpearl Nha Trang, có thể kết hợp vé VinWonders và lịch trình nghỉ dưỡng trên đảo.", mapX: 86, mapY: 72 },
+    { id: 45, title: "Vinpearl Resort & Golf Nam Hội An", loc: "Hội An, Quảng Nam", region: "mientrung", brand: "vinpearl", desc: "Tư vấn gói lưu trú Nam Hội An cho gia đình, đoàn nghỉ dưỡng, khách chơi golf hoặc kết hợp VinWonders Nam Hội An.", mapX: 72, mapY: 56 },
+    { id: 46, title: "Vinpearl Phú Quốc", loc: "Phú Quốc, Kiên Giang", region: "miennam", brand: "vinpearl", desc: "Booking chuỗi khách sạn và resort Vinpearl Phú Quốc, hỗ trợ chọn khu, hạng phòng và gói nghỉ dưỡng phù hợp.", mapX: 12, mapY: 95 },
+    { id: 47, title: "Vinpearl Hotels TP.HCM", loc: "TP. Hồ Chí Minh", region: "miennam", brand: "vinpearl", desc: "Tư vấn đặt phòng Vinpearl tại TP.HCM cho công tác, du lịch ngắn ngày hoặc lịch trình kết nối miền Nam.", mapX: 57, mapY: 82 }
 ];
 
 /* =========================================
@@ -62,23 +70,24 @@ const regionMeta = {
     mienbac: {
         label: "Miền Bắc",
         className: "mienbac",
-        gradient: "linear-gradient(135deg, #0b4ea2, #0f9f9a)"
+        gradient: "linear-gradient(135deg, #15231f, #0f6b5f)"
     },
     mientrung: {
         label: "Miền Trung",
         className: "mientrung",
-        gradient: "linear-gradient(135deg, #d89b18, #e15b4f)"
+        gradient: "linear-gradient(135deg, #8d6a22, #b7664b)"
     },
     miennam: {
         label: "Miền Nam",
         className: "miennam",
-        gradient: "linear-gradient(135deg, #238a57, #0f9f9a)"
+        gradient: "linear-gradient(135deg, #2f7655, #168a7a)"
     }
 };
 
 const brandMeta = {
     sunworld: { label: "Sun World", icon: "fa-solid fa-sun", className: "sunworld" },
     vinwonders: { label: "VinWonders", icon: "fa-solid fa-crown", className: "vinwonders" },
+    vinpearl: { label: "Vinpearl", icon: "fa-solid fa-hotel", className: "vinpearl" },
     ttc: { label: "TTC World", icon: "fa-solid fa-tree", className: "ttc" },
     other: { label: "Khác", icon: "fa-solid fa-location-dot", className: "other" }
 };
@@ -109,7 +118,7 @@ function normalizeText(value) {
 
 function getZaloLink(item) {
     const msg = item
-        ? `Xin chào RIVIU.ASIA, mình quan tâm vé "${item.title}" tại ${item.loc}. Vui lòng báo giá ưu đãi.`
+        ? `Xin chào RIVIU.ASIA, mình quan tâm ${item.brand === "vinpearl" ? "booking" : "vé"} "${item.title}" tại ${item.loc}. Vui lòng báo giá ưu đãi.`
         : "Xin chào RIVIU.ASIA, mình cần tư vấn voucher du lịch.";
 
     return `https://zalo.me/${ZALO_NUMBER}?text=${encodeURIComponent(msg)}`;
@@ -128,6 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.getElementById("main-search");
     const searchSuggestions = document.getElementById("search-suggestions");
     const pinsContainer = document.getElementById("pins-container");
+    const promoSlider = document.getElementById("promo-slider");
 
     const modal = document.getElementById("booking-modal");
     const backdrop = document.getElementById("backdrop");
@@ -138,6 +148,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const mLoc = document.getElementById("modal-location");
     const mDesc = document.getElementById("modal-desc");
     const btnZalo = document.getElementById("zalo-link");
+
+    initPromoSlider();
 
     filterBtns.forEach(btn => {
         btn.addEventListener("click", () => {
@@ -234,7 +246,11 @@ document.addEventListener("DOMContentLoaded", () => {
         mTitle.textContent = item.title;
         mRegion.textContent = region.label;
         mLoc.innerHTML = `<i class="fa-solid fa-location-dot" aria-hidden="true"></i> ${escapeHtml(item.loc)}`;
-        mDesc.innerHTML = `${escapeHtml(item.desc)}<br><br><strong>RIVIU.ASIA</strong> phản hồi giá vé, tình trạng mở bán và phương án phù hợp cho khách lẻ hoặc đoàn qua Zalo.`;
+        const serviceNote = item.brand === "vinpearl"
+            ? "phản hồi tình trạng phòng, hạng phòng, giá theo ngày lưu trú và phương án phù hợp cho khách lẻ hoặc đoàn qua Zalo."
+            : "phản hồi giá vé, tình trạng mở bán và phương án phù hợp cho khách lẻ hoặc đoàn qua Zalo.";
+
+        mDesc.innerHTML = `${escapeHtml(item.desc)}<br><br><strong>RIVIU.ASIA</strong> ${serviceNote}`;
         btnZalo.href = getZaloLink(item);
 
         mBox.style.background = region.gradient;
@@ -431,6 +447,68 @@ document.addEventListener("DOMContentLoaded", () => {
         filterData();
     } else {
         renderCards(destinations);
+    }
+
+    function initPromoSlider() {
+        if (!promoSlider) return;
+
+        const track = promoSlider.querySelector(".promo-track");
+        const slides = Array.from(promoSlider.querySelectorAll(".promo-slide"));
+        const dots = Array.from(promoSlider.querySelectorAll(".promo-dot"));
+        const prevBtn = promoSlider.querySelector("[data-promo-prev]");
+        const nextBtn = promoSlider.querySelector("[data-promo-next]");
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        let current = 0;
+        let timer = null;
+
+        if (!track || slides.length === 0) return;
+
+        const goTo = index => {
+            current = (index + slides.length) % slides.length;
+            track.style.transform = `translateX(-${current * 100}%)`;
+            dots.forEach((dot, dotIndex) => {
+                dot.classList.toggle("active", dotIndex === current);
+                dot.setAttribute("aria-current", dotIndex === current ? "true" : "false");
+            });
+        };
+
+        const stop = () => {
+            if (timer) window.clearInterval(timer);
+            timer = null;
+        };
+
+        const start = () => {
+            if (reduceMotion || timer || slides.length < 2) return;
+            timer = window.setInterval(() => goTo(current + 1), 4200);
+        };
+
+        prevBtn?.addEventListener("click", () => {
+            stop();
+            goTo(current - 1);
+            start();
+        });
+
+        nextBtn?.addEventListener("click", () => {
+            stop();
+            goTo(current + 1);
+            start();
+        });
+
+        dots.forEach((dot, index) => {
+            dot.addEventListener("click", () => {
+                stop();
+                goTo(index);
+                start();
+            });
+        });
+
+        promoSlider.addEventListener("mouseenter", stop);
+        promoSlider.addEventListener("mouseleave", start);
+        promoSlider.addEventListener("focusin", stop);
+        promoSlider.addEventListener("focusout", start);
+
+        goTo(0);
+        start();
     }
 });
 
