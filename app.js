@@ -177,10 +177,10 @@ function normalizeText(value) {
         .trim();
 }
 
-function getZaloLink(item) {
-    const msg = item
+function getZaloLink(item, customMessage = "") {
+    const msg = customMessage || (item
         ? `Xin chào RIVIU.ASIA, mình quan tâm ${item.brand === "vinpearl" ? "booking" : "vé"} "${item.title}" tại ${item.loc}. Vui lòng báo giá ưu đãi.`
-        : "Xin chào RIVIU.ASIA, mình cần tư vấn voucher du lịch.";
+        : "Xin chào RIVIU.ASIA, mình cần tư vấn voucher du lịch.");
 
     return `https://zalo.me/${ZALO_NUMBER}?text=${encodeURIComponent(msg)}`;
 }
@@ -195,6 +195,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const resultsLabel = document.getElementById("results-label");
     const resCount = document.getElementById("results-count");
     const filterBtns = document.querySelectorAll(".filter-btn");
+    const filterGroups = document.getElementById("filter-groups");
+    const mobileFilterToggle = document.getElementById("mobile-filter-toggle");
+    const activeFilterCount = document.getElementById("active-filter-count");
+    const filterSheetBackdrop = document.getElementById("filter-sheet-backdrop");
+    const filterSheetClose = document.getElementById("filter-sheet-close");
+    const filterSheetApply = document.getElementById("filter-sheet-apply");
+    const filterSheetResultCount = document.getElementById("filter-sheet-result-count");
+    const loadMoreButton = document.getElementById("load-more-button");
     const searchInput = document.getElementById("main-search");
     const searchSuggestions = document.getElementById("search-suggestions");
     const pinsContainer = document.getElementById("pins-container");
@@ -209,13 +217,71 @@ document.addEventListener("DOMContentLoaded", () => {
     const mLoc = document.getElementById("modal-location");
     const mDesc = document.getElementById("modal-desc");
     const btnZalo = document.getElementById("zalo-link");
+    const quoteModal = document.getElementById("quote-modal");
+    const quoteClose = document.getElementById("quote-close");
+    const quoteTitle = document.getElementById("quote-title");
+    const quoteDestinationName = document.getElementById("quote-destination-name");
+    const quoteDate = document.getElementById("quote-date");
+    const quoteTime = document.getElementById("quote-time");
+    const quoteAdults = document.getElementById("quote-adults");
+    const quoteChildren = document.getElementById("quote-children");
+    const quoteNext = document.getElementById("quote-next");
+    const quoteBack = document.getElementById("quote-back");
+    const quoteMessage = document.getElementById("quote-message");
+    const quoteCopy = document.getElementById("quote-copy");
+    const quoteCopyStatus = document.getElementById("quote-copy-status");
+    const quoteZaloLink = document.getElementById("quote-zalo-link");
     const mobileNavItems = document.querySelectorAll("[data-mobile-nav]");
+    const pageSize = window.matchMedia("(max-width: 820px)").matches ? 8 : 12;
+    let visibleLimit = pageSize;
+    let lastFilteredData = destinations;
+    let activeQuoteItem = null;
+    const quoteParty = { adults: 2, children: 0 };
+
+    function resetVisibleLimit() {
+        visibleLimit = pageSize;
+    }
+
+    function updateActiveFilterCount() {
+        const count = Number(currentRegion !== "all") + Number(currentBrand !== "all");
+        activeFilterCount.textContent = count;
+        activeFilterCount.hidden = count === 0;
+        mobileFilterToggle.classList.toggle("has-filters", count > 0);
+    }
+
+    function setFilterSheet(open) {
+        filterGroups.classList.toggle("filters-open", open);
+        filterSheetBackdrop.classList.toggle("show", open);
+        mobileFilterToggle.setAttribute("aria-expanded", String(open));
+        filterGroups.setAttribute("aria-hidden", String(!open));
+        document.body.classList.toggle("filter-sheet-open", open);
+    }
+
+    if (!window.matchMedia("(max-width: 820px)").matches) {
+        filterGroups.setAttribute("aria-hidden", "false");
+    }
 
     function updateMobileNav(name) {
         mobileNavItems.forEach(item => item.classList.toggle("active", item.dataset.mobileNav === name));
     }
 
     initPromoSlider();
+
+    mobileFilterToggle.addEventListener("click", () => {
+        setFilterSheet(true);
+    });
+
+    filterSheetClose.addEventListener("click", () => setFilterSheet(false));
+    filterSheetBackdrop.addEventListener("click", () => setFilterSheet(false));
+    window.applyFilterSheet = function() {
+        setFilterSheet(false);
+        document.querySelector(".results-info")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
+    loadMoreButton.addEventListener("click", () => {
+        visibleLimit += pageSize;
+        renderCards(lastFilteredData);
+    });
 
     mobileNavItems.forEach(item => {
         item.addEventListener("click", () => {
@@ -242,8 +308,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 currentRegion = filterVal;
             }
             showingSavedOnly = false;
+            resetVisibleLimit();
 
             btn.classList.add("active");
+            updateActiveFilterCount();
             filterData();
         });
     });
@@ -251,6 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
     searchInput.addEventListener("input", event => {
         searchKeyword = normalizeText(event.target.value);
         showingSavedOnly = false;
+        resetVisibleLimit();
 
         if (searchKeyword.length > 0) {
             const matches = destinations.filter(item => getSearchText(item).includes(searchKeyword));
@@ -278,7 +347,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("keydown", event => {
         if (event.key === "Escape") {
             closeBox();
+            closeQuoteModal();
             closePopup(true);
+            setFilterSheet(false);
         }
     });
 
@@ -305,6 +376,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentBrand = "all";
         searchKeyword = "";
         showingSavedOnly = false;
+        resetVisibleLimit();
         searchInput.value = "";
         searchSuggestions.classList.remove("active");
 
@@ -312,7 +384,8 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelector('.filter-btn[data-type="region"][data-filter="all"]')?.classList.add("active");
         document.querySelector('.filter-btn[data-type="brand"][data-filter="all"]')?.classList.add("active");
 
-        renderCards(destinations);
+        updateActiveFilterCount();
+        filterData();
     };
 
     window.toggleSavedDestination = function(event, id) {
@@ -325,6 +398,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.showSavedDestinations = function(event) {
         event?.preventDefault();
         showingSavedOnly = true;
+        resetVisibleLimit();
         currentRegion = "all";
         currentBrand = "all";
         searchKeyword = "";
@@ -336,6 +410,124 @@ document.addEventListener("DOMContentLoaded", () => {
         filterData();
         updateMobileNav("saved");
     };
+
+    function toLocalDateValue(date) {
+        const offset = date.getTimezoneOffset();
+        return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 10);
+    }
+
+    function formatQuoteDate(value) {
+        if (!value) return "Chưa chọn";
+        const [year, month, day] = value.split("-");
+        return `${day}/${month}/${year}`;
+    }
+
+    function buildQuoteMessage() {
+        if (!activeQuoteItem) return "";
+        return [
+            "Xin chào RIVIU.ASIA,",
+            "Mình cần nhận báo giá với thông tin:",
+            `• Điểm đến: ${activeQuoteItem.title}`,
+            `• Khu vực: ${activeQuoteItem.loc}`,
+            `• Ngày đi: ${formatQuoteDate(quoteDate.value)}`,
+            `• Khung giờ: ${quoteTime.value}`,
+            `• Người lớn: ${quoteParty.adults}`,
+            `• Trẻ em: ${quoteParty.children}`,
+            "Nhờ tư vấn loại vé phù hợp và ưu đãi giúp mình. Cảm ơn!"
+        ].join("\n");
+    }
+
+    function updateQuotePreview() {
+        const message = buildQuoteMessage();
+        quoteAdults.textContent = quoteParty.adults;
+        quoteChildren.textContent = quoteParty.children;
+        quoteMessage.value = message;
+        quoteZaloLink.href = getZaloLink(activeQuoteItem, message);
+    }
+
+    function setQuoteStep(step) {
+        document.querySelectorAll("[data-quote-step]").forEach(panel => {
+            const isActive = Number(panel.dataset.quoteStep) === step;
+            panel.classList.toggle("active", isActive);
+            panel.hidden = !isActive;
+        });
+        document.querySelectorAll("[data-quote-progress]").forEach(item => {
+            item.classList.toggle("active", Number(item.dataset.quoteProgress) <= step);
+        });
+        quoteTitle.textContent = step === 1 ? "Thông tin chuyến đi" : "Gửi yêu cầu qua Zalo";
+        if (step === 2) updateQuotePreview();
+    }
+
+    function closeQuoteModal() {
+        quoteModal.classList.remove("open");
+        quoteModal.setAttribute("aria-hidden", "true");
+        if (!modal.classList.contains("open")) {
+            backdrop.classList.remove("show");
+            document.body.classList.remove("modal-open");
+        }
+    }
+
+    window.openQuoteModal = function(id) {
+        const item = destinations.find(destination => destination.id === Number(id));
+        if (!item) return;
+
+        activeQuoteItem = item;
+        quoteParty.adults = 2;
+        quoteParty.children = 0;
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        quoteDate.min = toLocalDateValue(today);
+        quoteDate.value = toLocalDateValue(tomorrow);
+        quoteTime.value = "Linh hoạt";
+        quoteDestinationName.textContent = item.title;
+        quoteCopyStatus.textContent = "";
+        updateQuotePreview();
+        setQuoteStep(1);
+        closeBox();
+        quoteModal.classList.add("open");
+        quoteModal.setAttribute("aria-hidden", "false");
+        backdrop.classList.add("show");
+        document.body.classList.add("modal-open");
+    };
+
+    document.querySelectorAll("[data-count]").forEach(button => {
+        button.addEventListener("click", () => {
+            const type = button.dataset.count;
+            const delta = Number(button.dataset.delta);
+            const minimum = type === "adults" ? 1 : 0;
+            quoteParty[type] = Math.min(30, Math.max(minimum, quoteParty[type] + delta));
+            updateQuotePreview();
+        });
+    });
+
+    quoteNext.addEventListener("click", () => {
+        if (!quoteDate.reportValidity()) return;
+        setQuoteStep(2);
+    });
+    quoteBack.addEventListener("click", () => setQuoteStep(1));
+    quoteClose.addEventListener("click", closeQuoteModal);
+
+    async function copyQuoteMessage() {
+        const text = quoteMessage.value;
+        try {
+            await navigator.clipboard.writeText(text);
+            quoteCopyStatus.textContent = "Đã sao chép nội dung. Bạn có thể dán vào Zalo.";
+            quoteCopy.classList.add("copied");
+            quoteCopy.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i> Đã sao chép';
+        } catch (error) {
+            quoteMessage.focus();
+            quoteMessage.select();
+            document.execCommand("copy");
+            quoteCopyStatus.textContent = "Đã chọn nội dung. Hãy chọn Sao chép nếu thiết bị yêu cầu.";
+        }
+    }
+
+    quoteCopy.addEventListener("click", copyQuoteMessage);
+    quoteZaloLink.addEventListener("click", () => {
+        copyQuoteMessage();
+        quoteCopyStatus.textContent = "Đang mở Zalo… Nếu nội dung chưa tự điền, hãy nhấn Dán trong ô chat.";
+    });
 
     window.openBookingModal = function(id) {
         const item = destinations.find(destination => destination.id === id);
@@ -352,7 +544,7 @@ document.addEventListener("DOMContentLoaded", () => {
             : "phản hồi thông tin dịch vụ, tình trạng mở bán và phương án phù hợp cho khách lẻ hoặc đoàn qua Zalo.";
 
         mDesc.innerHTML = `${escapeHtml(item.desc)}<br><br><strong>RIVIU.ASIA</strong> ${serviceNote}`;
-        btnZalo.href = getZaloLink(item);
+        btnZalo.onclick = () => openQuoteModal(item.id);
 
         mBox.style.background = region.gradient;
         mBox.innerHTML = `
@@ -377,7 +569,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     mClose.addEventListener("click", closeBox);
-    backdrop.addEventListener("click", closeBox);
+    backdrop.addEventListener("click", () => {
+        closeBox();
+        closeQuoteModal();
+    });
 
     function renderSuggestions(matches) {
         if (matches.length === 0) {
@@ -416,13 +611,20 @@ document.addEventListener("DOMContentLoaded", () => {
             return matchRegion && matchBrand && matchSearch && matchSaved;
         });
 
+        lastFilteredData = filtered;
         renderCards(filtered);
     }
 
     function renderCards(data) {
         if (resultsLabel) resultsLabel.textContent = getResultsLabel();
         resCount.textContent = data.length;
+        filterSheetResultCount.textContent = data.length;
         if (noResults) noResults.hidden = data.length !== 0;
+        loadMoreButton.hidden = data.length <= visibleLimit;
+        const remaining = Math.max(0, data.length - visibleLimit);
+        loadMoreButton.querySelector("span").textContent = remaining > 0
+            ? `Xem thêm ${Math.min(pageSize, remaining)} trải nghiệm`
+            : "Đã xem tất cả";
 
         if (data.length === 0) {
             gridContainer.innerHTML = "";
@@ -430,7 +632,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        gridContainer.innerHTML = data.map((item, index) => {
+        const visibleData = data.slice(0, visibleLimit);
+        gridContainer.innerHTML = visibleData.map((item, index) => {
             const region = regionMeta[item.region];
             const brand = brandMeta[item.brand] || brandMeta.other;
             const delay = Math.min(index * 0.015, 0.35).toFixed(3);
@@ -472,10 +675,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
                                 <span>Chi tiết</span>
                             </button>
-                            <a class="card-action primary" href="${getZaloLink(item)}" target="_blank" rel="noopener">
+                            <button class="card-action primary" type="button" onclick="openQuoteModal(${item.id})">
                                 <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>
                                 <span>Báo giá Zalo</span>
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </article>

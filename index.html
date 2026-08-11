@@ -29,7 +29,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20260811-4">
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -262,10 +262,25 @@
                             <label class="sr-only" for="main-search">Tìm kiếm điểm đến</label>
                             <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
                             <input type="text" id="main-search" placeholder="Tìm điểm đến hoặc tỉnh thành" autocomplete="off">
+                            <button class="mobile-filter-toggle" id="mobile-filter-toggle" type="button" aria-expanded="false" aria-controls="filter-groups">
+                                <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+                                <span>Lọc</span>
+                                <b id="active-filter-count" hidden>0</b>
+                            </button>
                             <ul class="search-suggestions" id="search-suggestions"></ul>
                         </div>
 
-                        <div class="filter-groups">
+                        <div class="filter-sheet-backdrop" id="filter-sheet-backdrop"></div>
+                        <div class="filter-groups" id="filter-groups" role="dialog" aria-modal="true" aria-labelledby="filter-sheet-title" aria-hidden="true">
+                            <div class="filter-sheet-head">
+                                <div>
+                                    <span>BỘ LỌC KHÁM PHÁ</span>
+                                    <h3 id="filter-sheet-title">Tìm chuyến đi phù hợp</h3>
+                                </div>
+                                <button id="filter-sheet-close" type="button" aria-label="Đóng bộ lọc">
+                                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                                </button>
+                            </div>
                             <div class="filter-group filter-group--region" role="group" aria-label="Lọc theo khu vực">
                                 <span class="fg-label">Khu vực</span>
                                 <button class="filter-btn active" type="button" data-filter="all" data-type="region">Tất cả</button>
@@ -291,6 +306,12 @@
                                 </button>
                                 <button class="filter-btn brand-btn" type="button" data-filter="other" data-type="brand">Khác</button>
                             </div>
+                            <div class="filter-sheet-footer">
+                                <button class="filter-sheet-reset" type="button" onclick="resetFilters()">Xóa tất cả</button>
+                                <button class="filter-sheet-apply" id="filter-sheet-apply" type="button" onclick="applyFilterSheet()">
+                                    Xem <span id="filter-sheet-result-count">42</span> kết quả
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -306,6 +327,11 @@
                     </div>
 
                     <div class="destinations-grid" id="destinations-grid"></div>
+
+                    <button class="load-more-button" id="load-more-button" type="button" hidden>
+                        <span>Xem thêm trải nghiệm</span>
+                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                    </button>
 
                     <div class="empty-state" id="no-results" hidden>
                         <i class="fa-regular fa-compass" aria-hidden="true"></i>
@@ -398,11 +424,104 @@
                     <span id="modal-location"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Tỉnh/Thành phố</span>
                 </div>
                 <p id="modal-desc" class="modal-desc">Mô tả chi tiết điểm đến.</p>
-                <a href="#" id="zalo-link" target="_blank" rel="noopener" class="btn btn-zalo-large">
+                <button id="zalo-link" type="button" class="btn btn-zalo-large">
                     <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>
-                    <span>Nhắn Zalo nhận báo giá</span>
-                </a>
+                    <span>Chuẩn bị yêu cầu báo giá</span>
+                </button>
             </div>
+        </div>
+    </div>
+
+    <div class="quote-modal" id="quote-modal" role="dialog" aria-modal="true" aria-labelledby="quote-title" aria-hidden="true">
+        <div class="quote-modal-content">
+            <header class="quote-modal-head">
+                <div>
+                    <span class="quote-kicker">YÊU CẦU BÁO GIÁ</span>
+                    <h2 id="quote-title">Thông tin chuyến đi</h2>
+                </div>
+                <button class="quote-close" id="quote-close" type="button" aria-label="Đóng bảng báo giá">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </header>
+
+            <div class="quote-progress" aria-label="Tiến trình gửi yêu cầu">
+                <span class="active" data-quote-progress="1"><b>1</b> Thông tin</span>
+                <i aria-hidden="true"></i>
+                <span data-quote-progress="2"><b>2</b> Gửi Zalo</span>
+            </div>
+
+            <section class="quote-step active" id="quote-step-1" data-quote-step="1">
+                <div class="quote-destination">
+                    <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                    <div><small>Điểm đến</small><strong id="quote-destination-name">Tên điểm đến</strong></div>
+                </div>
+
+                <div class="quote-field-grid">
+                    <label class="quote-field">
+                        <span>Ngày đi <em>*</em></span>
+                        <input id="quote-date" type="date" required>
+                    </label>
+                    <label class="quote-field">
+                        <span>Khung giờ</span>
+                        <select id="quote-time">
+                            <option value="Linh hoạt">Linh hoạt</option>
+                            <option value="Buổi sáng">Buổi sáng</option>
+                            <option value="Buổi chiều">Buổi chiều</option>
+                            <option value="Buổi tối">Buổi tối</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="quote-guests" aria-label="Số lượng khách">
+                    <div class="guest-row">
+                        <div><strong>Người lớn</strong><small>Từ 140 cm hoặc theo quy định điểm đến</small></div>
+                        <div class="guest-counter">
+                            <button type="button" data-count="adults" data-delta="-1" aria-label="Giảm người lớn">−</button>
+                            <output id="quote-adults">2</output>
+                            <button type="button" data-count="adults" data-delta="1" aria-label="Tăng người lớn">+</button>
+                        </div>
+                    </div>
+                    <div class="guest-row">
+                        <div><strong>Trẻ em</strong><small>Nhân viên sẽ xác nhận lại độ tuổi/chiều cao</small></div>
+                        <div class="guest-counter">
+                            <button type="button" data-count="children" data-delta="-1" aria-label="Giảm trẻ em">−</button>
+                            <output id="quote-children">0</output>
+                            <button type="button" data-count="children" data-delta="1" aria-label="Tăng trẻ em">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="quote-next" id="quote-next" type="button">
+                    Tiếp tục <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                </button>
+            </section>
+
+            <section class="quote-step" id="quote-step-2" data-quote-step="2" hidden>
+                <div class="quote-ready">
+                    <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+                    <div><strong>Tin nhắn đã sẵn sàng</strong><span>Sao chép và gửi cho RIVIU.ASIA qua Zalo.</span></div>
+                </div>
+
+                <label class="quote-copy-box">
+                    <span>Nội dung yêu cầu</span>
+                    <textarea id="quote-message" rows="8" readonly></textarea>
+                    <button id="quote-copy" type="button"><i class="fa-regular fa-copy" aria-hidden="true"></i> Sao chép nội dung</button>
+                </label>
+                <p class="quote-copy-status" id="quote-copy-status" aria-live="polite"></p>
+
+                <ol class="quote-guide">
+                    <li><b>1</b><span>Nhấn nút bên dưới để sao chép và mở Zalo.</span></li>
+                    <li><b>2</b><span>Chọn cuộc trò chuyện với RIVIU.ASIA.</span></li>
+                    <li><b>3</b><span>Dán nội dung nếu Zalo chưa tự điền, rồi gửi.</span></li>
+                </ol>
+
+                <div class="quote-final-actions">
+                    <button id="quote-back" type="button"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Sửa lại</button>
+                    <a id="quote-zalo-link" href="#" target="_blank" rel="noopener">
+                        <i class="fa-solid fa-comment-dots" aria-hidden="true"></i> Sao chép &amp; mở Zalo
+                    </a>
+                </div>
+            </section>
         </div>
     </div>
     <div class="backdrop" id="backdrop"></div>
@@ -415,6 +534,6 @@
         <a href="#contact" data-mobile-nav="profile"><i class="fa-regular fa-user" aria-hidden="true"></i><span>Cá nhân</span></a>
     </nav>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=20260811-4"></script>
 </body>
 </html>
