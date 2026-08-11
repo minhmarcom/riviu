@@ -456,6 +456,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         quoteTitle.textContent = step === 1 ? "Thông tin chuyến đi" : "Gửi yêu cầu qua Zalo";
         if (step === 2) updateQuotePreview();
+        quoteModal.querySelector(".quote-modal-content")?.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     function closeQuoteModal() {
