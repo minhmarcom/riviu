@@ -2,7 +2,9 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>RIVIU.ASIA | Voucher du lịch, vé cáp treo và khu vui chơi toàn quốc</title>
 
     <meta name="description" content="RIVIU.ASIA nhận booking voucher du lịch, vé cáp treo, công viên giải trí, show diễn và tour trải nghiệm tại Việt Nam. Tư vấn nhanh qua Zalo cho khách lẻ và đoàn.">
@@ -83,6 +85,17 @@
 <body>
     <a class="skip-link" href="#catalog">Bỏ qua đến danh mục</a>
 
+    <div class="mobile-appbar" aria-label="Thanh ứng dụng">
+        <a href="#" class="mobile-brand">
+            <img src="favicon.png" alt="">
+            <span><small>KHÁM PHÁ VIỆT NAM</small><strong>RIVIU.ASIA</strong></span>
+        </a>
+        <button class="mobile-avatar" type="button" onclick="openZaloGlobal()" aria-label="Mở tư vấn Zalo">
+            <i class="fa-regular fa-message" aria-hidden="true"></i>
+            <span></span>
+        </button>
+    </div>
+
     <header class="top-nav">
         <div class="container nav-wrap">
             <a href="#" class="logo" aria-label="RIVIU.ASIA trang chủ">
@@ -109,6 +122,12 @@
             <p class="eyebrow">Travel concierge toàn quốc</p>
             <h1 id="hero-title">RIVIU.ASIA</h1>
             <p class="hero-lead">Đặt vé khu vui chơi, cáp treo, show diễn và tour trải nghiệm nổi bật tại Việt Nam qua đội ngũ tư vấn Zalo nhanh, rõ giá và sát lịch trình.</p>
+
+            <a class="mobile-hero-search" href="#filter-bar">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <span>Tìm điểm đến, hoạt động...</span>
+                <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+            </a>
 
             <div class="hero-actions">
                 <a class="btn btn-primary" href="#catalog">
@@ -387,6 +406,14 @@
         </div>
     </div>
     <div class="backdrop" id="backdrop"></div>
+
+    <nav class="mobile-bottom-nav" aria-label="Điều hướng ứng dụng">
+        <a class="active" href="#" data-mobile-nav="home"><i class="fa-solid fa-house" aria-hidden="true"></i><span>Trang chủ</span></a>
+        <a href="#catalog" data-mobile-nav="discover"><i class="fa-regular fa-compass" aria-hidden="true"></i><span>Khám phá</span></a>
+        <button class="mobile-nav-main" type="button" onclick="openZaloGlobal()"><i class="fa-solid fa-ticket" aria-hidden="true"></i><span>Đặt vé</span></button>
+        <a href="#catalog" data-mobile-nav="saved" onclick="showSavedDestinations(event)"><i class="fa-regular fa-heart" aria-hidden="true"></i><span>Đã lưu</span></a>
+        <a href="#contact" data-mobile-nav="profile"><i class="fa-regular fa-user" aria-hidden="true"></i><span>Cá nhân</span></a>
+    </nav>
 
     <script src="app.js"></script>
 </body>
